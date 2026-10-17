@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="人生スコア">
-  <title>人生スコア計算機｜毒舌称号 Ver.3</title>
+  <title>人生スコア計算機｜毒舌称号 Ver.3.1</title>
   <style>
     :root { color-scheme: dark; --bg:#10141e; --panel:#1b2130; --panel2:#151b28; --line:#343b4b; --muted:#a7b0c2; --text:#f3f5ff; --accent:#99b1ff; --coral:#ff796e; }
     * { box-sizing:border-box; }
@@ -82,9 +82,30 @@
     .error { color:#ffb0aa; font-size:.8rem; margin-top:10px; }
     .hidden { display:none; }
     button:focus-visible,select:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
-    @media(max-width:390px) { .wrap { width:calc(100% - 22px); padding-top:24px; } .card,.result { padding:17px; } .grid { gap:14px 10px; } .amount-wrap select { width:68px; padding-left:4px; padding-right:18px; font-size:.79rem; } .amount-wrap input { padding:12px 8px; font-size:1.06rem; } .suffix { padding:0 9px; } .result-actions { flex-direction:column; } }
-    @media(max-width:390px) { .title-breakdown {grid-template-columns:1fr;} .title-detail{padding:10px;} .title-detail-label { margin-bottom:2px; } }
-    @media(max-width:320px) { .grid { grid-template-columns:1fr; } }
+    /* 金額はスマホでは各1行いっぱいに展開。数値を隠してまで2列にはしない。 */
+    @media(max-width:620px) {
+      .field-money { grid-column:1 / -1; }
+      .field-money .amount-wrap input { flex:1 1 0%; width:0; font-size:1.12rem; }
+      .field-money .amount-wrap select { width:87px; }
+      .field-money .sign-toggle { min-width:44px; }
+    }
+    @media(max-width:390px) {
+      .wrap { width:calc(100% - 22px); padding-top:24px; }
+      .card,.result { padding:17px; }
+      .grid { gap:14px 10px; }
+      .amount-wrap input { padding:12px 11px; font-size:1.06rem; }
+      .field-money .amount-wrap select { width:86px; font-size:.85rem; }
+      .suffix { padding:0 9px; }
+      .result-actions { flex-direction:column; }
+      .title-breakdown { grid-template-columns:1fr; }
+      .title-detail { padding:10px; }
+      .title-detail-label { margin-bottom:2px; }
+    }
+    @media(max-width:340px) {
+      .field-money .amount-wrap select { width:75px; }
+      .field-money .sign-toggle { min-width:38px; }
+      .grid { grid-template-columns:1fr; }
+    }
     @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition:none!important; } }
   </style>
 </head>
@@ -93,13 +114,13 @@
     <header>
       <span class="eyebrow">LIFE SCORE</span>
       <h1>人生スコア計算機</h1>
-      <p class="subtitle">金額25段階 × 子供11段階 × 年齢20段階。最大5,500通りの毒舌称号 Ver.3</p>
+      <p class="subtitle">金額25段階 × 子供11段階 × 年齢20段階。最大5,500通りの毒舌称号 Ver.3.1</p>
     </header>
 
     <section class="card" aria-labelledby="input-title">
       <h2 class="section-title" id="input-title">スコアを計算する</h2>
       <div class="grid">
-        <div class="field">
+        <div class="field field-money">
           <label for="income">生涯年収</label>
           <div class="amount-wrap">
             <input id="income" type="text" inputmode="decimal" autocomplete="off" placeholder="例: 5.7" aria-label="生涯年収の金額">
@@ -107,7 +128,7 @@
             <select id="incomeUnit" aria-label="生涯年収の単位"><option value="oku">億円</option><option value="man">万円</option><option value="yen">円</option></select>
           </div>
         </div>
-        <div class="field">
+        <div class="field field-money">
           <label for="assets">資産</label>
           <div class="amount-wrap">
             <input id="assets" type="text" inputmode="decimal" autocomplete="off" placeholder="例: 3.1" aria-label="資産の金額">
