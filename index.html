@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#151a26">
+  <meta name="description" content="生涯年収・資産・年齢・子供の人数から、人生のスコアを計算する無料ツール。">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="人生スコア">
+  <title>人生スコア計算機</title>
+  <style>
+    :root { color-scheme: dark; --bg:#10141e; --panel:#1b2130; --panel2:#151b28; --line:#343b4b; --muted:#a7b0c2; --text:#f3f5ff; --accent:#99b1ff; --coral:#ff796e; }
+    * { box-sizing:border-box; }
+    html { -webkit-text-size-adjust:100%; }
+    body { margin:0; min-height:100dvh; background:radial-gradient(ellipse 82% 30% at 50% -5%,#263453 0%,transparent 88%),var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif; line-height:1.55; }
+    button,input,select { font:inherit; }
+    button { cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .wrap { width:min(100% - 28px,650px); margin:0 auto; padding:34px 0 calc(40px + env(safe-area-inset-bottom)); }
+    header { margin:0 0 23px; }
+    .eyebrow { display:inline-flex; align-items:center; gap:9px; font-size:.74rem; font-weight:800; letter-spacing:.15em; color:var(--accent); }
+    .eyebrow::before { content:""; width:8px; height:8px; background:var(--coral); border-radius:50%; box-shadow:0 0 0 4px #ff796e1d; }
+    h1 { font-size:clamp(1.85rem,7.1vw,2.7rem); margin:9px 0 6px; letter-spacing:.03em; line-height:1.25; }
+    .subtitle { color:var(--muted); font-size:.93rem; margin:0; }
+    .card { background:linear-gradient(150deg,#1c2332,#181e2a); border:1px solid var(--line); border-radius:19px; padding:23px; box-shadow:0 14px 40px #00000028; }
+    .section-title { margin:0 0 17px; font-size:1rem; letter-spacing:.04em; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px 14px; }
+    .field { min-width:0; }
+    label { display:block; font-size:.86rem; color:#d5daea; font-weight:700; margin-bottom:8px; }
+    .amount-wrap { display:flex; min-width:0; align-items:stretch; border:1px solid #495167; border-radius:11px; overflow:hidden; background:#101622; transition:border-color .15s,box-shadow .15s; }
+    .amount-wrap:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px #99b1ff24; }
+    .amount-wrap input { width:100%; min-width:0; border:0; outline:0; color:#f8f9ff; background:transparent; font-size:1.17rem; font-weight:700; padding:13px 12px; font-variant-numeric:tabular-nums; }
+    .amount-wrap input::placeholder { color:#697386; font-weight:400; }
+    .amount-wrap select { width:77px; flex-shrink:0; appearance:none; -webkit-appearance:none; border:0; outline:0; border-left:1px solid #343b4b; color:#e5e9fc; background:#252d3d; padding:8px 20px 8px 8px; font-size:.86rem; font-weight:700; text-align:center; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23c9d1e4' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 7px center; }
+    .suffix { padding:0 13px; display:flex; align-items:center; color:#c6cee3; border-left:1px solid #343b4b; background:#222a3a; font-weight:700; font-size:.91rem; }
+    input[type=number] { -moz-appearance:textfield; appearance:textfield; }
+    input::-webkit-outer-spin-button,input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+    .hint { font-size:.77rem; color:var(--muted); margin:8px 0 0; }
+    .actions { display:flex; gap:10px; margin-top:21px; flex-wrap:wrap; }
+    .btn { border-radius:11px; padding:12px 16px; min-height:46px; border:1px solid var(--line); font-weight:800; font-size:.91rem; transition:background .15s,transform .15s; }
+    .btn:active { transform:scale(.98); }
+    .btn-subtle { background:#292f40; color:#d6ddec; }
+    .btn-subtle:hover { background:#343d50; }
+    .result { margin-top:17px; border:1px solid #556bb0; border-radius:19px; background:linear-gradient(145deg,#263456,#212a44 58%,#242e46); padding:23px; position:relative; overflow:hidden; }
+    .result::after { content:""; width:135px; height:135px; position:absolute; right:-65px; top:-65px; background:#a2b5ff1c; border-radius:50%; pointer-events:none; }
+    .result-title { color:#bbcaef; letter-spacing:.13em; font-size:.82rem; font-weight:800; }
+    .score { display:block; font-size:clamp(1.8rem,7.3vw,3.15rem); line-height:1.18; overflow-wrap:anywhere; font-weight:850; font-variant-numeric:tabular-nums; letter-spacing:-.035em; margin:13px 0 5px; }
+    .score span { color:#c5cff3; font-size:.39em; font-weight:700; letter-spacing:0; margin-left:6px; }
+    .score-jp { min-height:23px; color:#bfcaf1; font-size:.94rem; font-weight:700; }
+    .equation { color:#dae1fb; border-top:1px solid #58648b; padding-top:13px; margin:18px 0 0; font-size:.83rem; line-height:1.75; overflow-wrap:anywhere; }
+    .result-actions { display:flex; gap:10px; margin-top:19px; }
+    .btn-primary { color:#121928; background:var(--accent); border-color:var(--accent); flex:1; }
+    .btn-primary:hover { background:#bacaff; }
+    .btn-secondary { background:#364463; color:#ecf1ff; border-color:#58678c; flex:1; }
+    .btn-secondary:hover { background:#435477; }
+    .notice { min-height:22px; color:#b3c5ff; font-size:.82rem; margin-top:9px; }
+    .explain { padding:23px 8px 0; color:var(--muted); font-size:.85rem; }
+    .explain h2 { color:#e2e7f6; font-size:.96rem; margin:0 0 6px; }
+    .explain p { margin:0 0 12px; }
+    .formula { margin:6px 0 12px; color:#e9ecfc; background:#202838; border-radius:10px; padding:13px; font-weight:700; text-align:center; font-size:.91rem; }
+    .bottom { margin-top:21px; color:#7f8aa3; font-size:.73rem; text-align:center; }
+    .error { color:#ffb0aa; font-size:.8rem; margin-top:10px; }
+    .hidden { display:none; }
+    button:focus-visible,select:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+    @media(max-width:390px) { .wrap { width:calc(100% - 22px); padding-top:24px; } .card,.result { padding:17px; } .grid { gap:14px 10px; } .amount-wrap select { width:68px; padding-left:4px; padding-right:18px; font-size:.79rem; } .amount-wrap input { padding:12px 8px; font-size:1.06rem; } .suffix { padding:0 9px; } .result-actions { flex-direction:column; } }
+    @media(max-width:320px) { .grid { grid-template-columns:1fr; } }
+    @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition:none!important; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <span class="eyebrow">LIFE SCORE</span>
+      <h1>人生スコア計算機</h1>
+      <p class="subtitle">数字を入力するだけ。人生の結果を、ひとつのスコアに。</p>
+    </header>
+
+    <section class="card" aria-labelledby="input-title">
+      <h2 class="section-title" id="input-title">スコアを計算する</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="income">生涯年収</label>
+          <div class="amount-wrap">
+            <input id="income" type="text" inputmode="decimal" autocomplete="off" placeholder="例: 5.7" aria-label="生涯年収の金額">
+            <select id="incomeUnit" aria-label="生涯年収の単位"><option value="oku">億円</option><option value="man">万円</option><option value="yen">円</option></select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="assets">資産</label>
+          <div class="amount-wrap">
+            <input id="assets" type="text" inputmode="decimal" autocomplete="off" placeholder="例: 3.1" aria-label="資産の金額">
+            <select id="assetsUnit" aria-label="資産の単位"><option value="oku">億円</option><option value="man">万円</option><option value="yen">円</option></select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="age">年齢（亡くなったとき）</label>
+          <div class="amount-wrap">
+            <input id="age" type="text" inputmode="numeric" autocomplete="off" placeholder="例: 81" aria-label="年齢">
+            <span class="suffix">歳</span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="children">子供の人数</label>
+          <div class="amount-wrap">
+            <input id="children" type="text" inputmode="numeric" autocomplete="off" placeholder="例: 1" aria-label="子供の人数">
+            <span class="suffix">人</span>
+          </div>
+        </div>
+      </div>
+      <div id="validation" class="error hidden" role="status"></div>
+      <div class="actions">
+        <button class="btn btn-subtle" type="button" id="sample">画像の例を入力</button>
+        <button class="btn btn-subtle" type="button" id="reset">リセット</button>
+      </div>
+    </section>
+
+    <section class="result" aria-label="計算結果" aria-live="polite">
+      <div class="result-title">YOUR LIFE SCORE</div>
+      <div class="score" id="score">—<span>点</span></div>
+      <div class="score-jp" id="scoreJp">4項目を入力すると結果が表示されます</div>
+      <div class="equation" id="equation">（生涯年収 ＋ 資産）× 年齢 ×（1 ＋ 子供の人数）</div>
+      <div class="result-actions">
+        <button class="btn btn-primary" type="button" id="share" disabled>結果を共有</button>
+        <button class="btn btn-secondary" type="button" id="copy" disabled>スコアをコピー</button>
+      </div>
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="explain" aria-labelledby="formula-title">
+      <h2 id="formula-title">計算方法</h2>
+      <div class="formula">（生涯年収 ＋ 資産）× 年齢 ×（1 ＋ 子供の人数）</div>
+      <p>金額はすべて円に換算して計算します。例えば、年収5.7億円・資産3.1億円・81歳・子供1人なら、スコアは <strong style="color:#e9edff">142,560,000,000 点</strong>です。</p>
+      <p>これはゲーム用の独自スコアです。実際の人生の価値や幸福を評価するものではありません。入力した内容はサーバーへ送信されません。</p>
+    </section>
+    <div class="bottom">スマートフォン・PC対応 ｜ 無料 ｜ 登録不要</div>
+  </main>
+  <script>
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const fields = ['income','incomeUnit','assets','assetsUnit','age','children'];
+    const fmt = new Intl.NumberFormat('ja-JP');
+    let latest = null;
+
+    // 小数値をBigIntに変換して円単位で正確に計算する。
+    function parseCurrency(value, unit) {
+      const s = value.trim().replace(/,/g, '').replace(/，/g, '').replace(/．/g, '.');
+      if (!/^\d+(?:\.\d+)?$/.test(s)) throw new Error('金額は0以上の数字で入力してください。');
+      const scale = {oku:8, man:4, yen:0}[unit];
+      const [integer, decimal=''] = s.split('.');
+      const kept = decimal.slice(0, scale);
+      const dropped = decimal.slice(scale);
+      if (dropped && /[1-9]/.test(dropped)) throw new Error('金額は1円単位で入力してください。');
+      if (scale === 0 && decimal && /[1-9]/.test(decimal)) throw new Error('「円」の場合は整数で入力してください。');
+      return BigInt(integer) * (10n ** BigInt(scale)) + BigInt((kept.padEnd(scale, '0') || '0'));
+    }
+    function parseCount(raw, label, max) {
+      const s = raw.trim();
+      if (!/^\d+$/.test(s)) throw new Error(label+'は0以上の整数で入力してください。');
+      const n = Number(s);
+      if (!Number.isSafeInteger(n) || n > max) throw new Error(label+'は0〜'+max+'の範囲で入力してください。');
+      return BigInt(n);
+    }
+    function compactNumber(n) {
+      const oku = n / 100000000n;
+      const man = (n % 100000000n) / 10000n;
+      const yen = n % 10000n;
+      let result = '';
+      if (oku) result += fmt.format(oku) + '億';
+      if (man) result += fmt.format(man) + '万';
+      if (yen || !result) result += fmt.format(yen);
+      return result + ' 点';
+    }
+    function currencyText(n) {
+      if (n === 0n) return '0円';
+      const oku = n / 100000000n;
+      const man = (n % 100000000n) / 10000n;
+      const yen = n % 10000n;
+      let s = '';
+      if (oku) s += fmt.format(oku) + '億';
+      if (man) s += fmt.format(man) + '万';
+      if (yen) s += fmt.format(yen);
+      return s + '円';
+    }
+    function showResetState(message='4項目を入力すると結果が表示されます') {
+      latest = null;
+      $('score').innerHTML = '—<span>点</span>';
+      $('scoreJp').textContent = message;
+      $('equation').textContent = '（生涯年収 ＋ 資産）× 年齢 ×（1 ＋ 子供の人数）';
+      $('share').disabled = true;
+      $('copy').disabled = true;
+    }
+    function calculate() {
+      $('notice').textContent = '';
+      const empty = ['income','assets','age','children'].some(id => $(id).value.trim() === '');
+      if (empty) {
+        $('validation').classList.add('hidden');
+        showResetState();
+        return;
+      }
+      try {
+        const income = parseCurrency($('income').value, $('incomeUnit').value);
+        const assets = parseCurrency($('assets').value, $('assetsUnit').value);
+        const age = parseCount($('age').value, '年齢', 130);
+        const children = parseCount($('children').value, '子供の人数', 100);
+        const score = (income+assets)*age*(1n+children);
+        latest = { income,assets,age,children,score };
+        $('validation').classList.add('hidden');
+        $('score').replaceChildren(document.createTextNode(fmt.format(score)), Object.assign(document.createElement('span'),{textContent:'点'}));
+        $('scoreJp').textContent = compactNumber(score);
+        $('equation').textContent = `（${currencyText(income)} ＋ ${currencyText(assets)}）× ${fmt.format(age)}歳 × ${fmt.format(1n+children)} = ${fmt.format(score)} 点`;
+        $('share').disabled = false;
+        $('copy').disabled = false;
+      } catch (e) {
+        $('validation').textContent = e.message;
+        $('validation').classList.remove('hidden');
+        showResetState('入力内容を確認してください');
+      }
+    }
+    function resultText() {
+      if (!latest) return '';
+      const r = latest;
+      const link = /^https?:$/.test(location.protocol) ? `\n計算ページ：${location.href}` : '';
+      return `人生スコア：${fmt.format(r.score)} 点\n生涯年収：${currencyText(r.income)}\n資産：${currencyText(r.assets)}\n年齢：${r.age}歳\n子供の人数：${r.children}人\n（生涯年収＋資産）×年齢×（1＋子供の人数）${link}`;
+    }
+    async function copyResult() {
+      const text = resultText();
+      if (!text) return;
+      try {
+        if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+        else {
+          const area = document.createElement('textarea');
+          area.value = text; area.style.position = 'fixed'; area.style.opacity = '0';
+          document.body.appendChild(area); area.select();
+          const success = document.execCommand('copy'); area.remove();
+          if (!success) throw new Error('copy not supported');
+        }
+        $('notice').textContent = 'スコアをコピーしました。';
+      } catch (_) {
+        $('notice').textContent = 'コピーできませんでした。ブラウザの共有機能をお試しください。';
+      }
+    }
+    $('sample').addEventListener('click', () => {
+      $('income').value='5.7'; $('incomeUnit').value='oku';
+      $('assets').value='3.1'; $('assetsUnit').value='oku';
+      $('age').value='81'; $('children').value='1'; calculate();
+    });
+    $('reset').addEventListener('click', () => {
+      ['income','assets','age','children'].forEach(id => $(id).value='');
+      $('incomeUnit').value='oku'; $('assetsUnit').value='oku'; calculate();
+      $('income').focus();
+    });
+    fields.forEach(id => $(id).addEventListener('input',calculate));
+    $('copy').addEventListener('click',copyResult);
+    $('share').addEventListener('click',async()=>{
+      if (!latest) return;
+      if (navigator.share) {
+        try {
+          await navigator.share({title:'人生スコア計算機',text:resultText()});
+          return;
+        } catch(e) { if (e.name==='AbortError') return; }
+      }
+      await copyResult();
+    });
+    calculate();
+  </script>
+</body>
+</html>
