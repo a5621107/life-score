@@ -70,6 +70,8 @@
     .result-title { color:#bbcaef; letter-spacing:.13em; font-size:.82rem; font-weight:800; }
     .score { display:block; font-size:clamp(1.8rem,7.3vw,3.15rem); line-height:1.18; overflow-wrap:anywhere; font-weight:850; font-variant-numeric:tabular-nums; letter-spacing:-.035em; margin:13px 0 5px; }
     .score span { color:#c5cff3; font-size:.39em; font-weight:700; letter-spacing:0; margin-left:6px; }
+    .score-track { margin:12px 0 10px; width:100%; height:9px; border-radius:999px; background:#161f34; overflow:hidden; border:1px solid #4c5d80; }
+    .score-fill { height:100%; width:0%; background:linear-gradient(90deg,#829cfd,#bdd0ff); border-radius:inherit; transition:width .25s ease; }
     .score-jp { min-height:23px; color:#bfcaf1; font-size:.94rem; font-weight:700; }
     .equation { color:#dae1fb; border-top:1px solid #58648b; padding-top:13px; margin:18px 0 0; font-size:.83rem; line-height:1.75; overflow-wrap:anywhere; }
     .result-actions { display:flex; gap:10px; margin-top:19px; }
@@ -167,7 +169,8 @@
 
     <section class="result" aria-label="計算結果" aria-live="polite">
       <div class="result-title">YOUR LIFE SCORE</div>
-      <div class="score" id="score">—<span>億点</span></div>
+      <div class="score" id="score">—<span>点 / 100点</span></div>
+      <div class="score-track" id="scoreTrack" role="progressbar" aria-label="人生スコア" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="score-fill" id="scoreFill"></div></div>
       <div class="score-jp" id="scoreJp">4項目を入力すると結果が表示されます</div>
       <div class="title-panel" aria-live="polite">
         <div class="title-label">あなたの称号</div>
@@ -190,8 +193,9 @@
 
     <section class="explain" aria-labelledby="formula-title">
       <h2 id="formula-title">計算方法</h2>
-      <div class="formula">（生涯年収 ＋ 資産）× 年齢 ×（1 ＋ 子供の人数）</div>
-      <p>金額はすべて円に換算して正確に計算し、結果は<strong style="color:#e9edff">1億点を単位として表示</strong>します。例えば、年収5.7億円・資産3.1億円・81歳・子供1人なら <strong style="color:#e9edff">1,425.6億点</strong>です。元の計算式は変わりません。</p>
+      <div class="formula">新スコア ＝ 100 × 最大値(旧スコア, 0) ÷［最大値(旧スコア, 0) ＋ 500億点］</div>
+      <p>最初に「（生涯年収 ＋ 資産）× 年齢 ×（1 ＋ 子供の人数）」で旧スコアを計算し、<strong style="color:#e9edff">0〜100点</strong>に換算します。<strong style="color:#e9edff">旧スコア500億点で50点</strong>、1,000億点で約66.67点、1,500億点で75点。点数が高くなるほど100点に近づきにくくなります。</p>
+      <p>例：年収5.7億円・資産3.1億円・81歳・子供1人の場合、旧スコア1,425.6億点 → <strong style="color:#e9edff">74.03点</strong>。負の旧スコアは0点とし、画面上の点数は小数第2位まで四捨五入します。100点は上限で、非常に大きな値では四捨五入により100.00点と表示されることがあります。</p>
       <p>称号は「生涯年収＋資産 → 子供の人数 → 年齢」の順に結合します。合計が10.1億円以上15.1億円未満なら「お前別班か？」、15.1億円以上なら「お前ペニマンなのか？」という特別称号になります。</p>
       <p>金額の通常称号は1,000万円単位に四捨五入して細分化します。特別称号の境界は端数を丸めず、正確な合計金額で判定します。15億円を超え15.1億円未満の場合は前者の特別称号です。負の数にも専用称号があります。称号は「引き直す」で何度でも変更できます。</p>
       <details class="rule-box">
@@ -252,6 +256,18 @@
       if (yen) result += fmt.format(yen);
       return sign + result + '円';
     }
+    // 旧スコア (単位：円×年齢×人数係数) の500億点相当が新スコアの50点。
+    // BigIntによる整数演算で0〜100点 (小数第2位) に四捨五入して換算。
+    const SCORE_HALF = 500n * 100000000n;
+    function normalizedHundredths(originalScore) {
+      const positive = originalScore > 0n ? originalScore : 0n;
+      const denominator = positive + SCORE_HALF;
+      return (positive * 10000n + denominator / 2n) / denominator;
+    }
+    function normalizedScoreText(hundredths) {
+      return `${hundredths/100n}.${(hundredths%100n).toString().padStart(2,'0')}`;
+    }
+
     // 金額の通常判定のみ1,000万円単位に丸める。特例は正確な円額で判定する。
     // upperBound は0.1億円（1,000万円）単位。コード・画面表示・ルール表で同じ配列を使う。
     const moneyRules = [
@@ -717,7 +733,9 @@
     }
     function showResetState(message='4項目を入力すると結果が表示されます') {
       latest = null;
-      $('score').innerHTML = '—<span>億点</span>';
+      $('score').replaceChildren(document.createTextNode('—'), Object.assign(document.createElement('span'),{textContent:'点 / 100点'}));
+      $('scoreFill').style.width = '0%';
+      $('scoreTrack').setAttribute('aria-valuenow','0');
       $('scoreJp').textContent = message;
       $('earnedTitle').textContent = '—';
       $('titleBreakdown').classList.add('hidden');
@@ -742,11 +760,15 @@
         const age = parseCount($('age').value, '年齢');
         const children = parseCount($('children').value, '子供の人数');
         const score = (income+assets)*age*(1n+children);
+        const hundredths = normalizedHundredths(score);
+        const displayedScore = normalizedScoreText(hundredths);
         const titleInfo = getTitle(income+assets,children,age,titleDraw);
-        latest = { income,assets,age,children,score,title:titleInfo.title };
+        latest = { income,assets,age,children,score,displayedScore,title:titleInfo.title };
         $('validation').classList.add('hidden');
-        $('score').replaceChildren(document.createTextNode(scoreInOkuText(score)), Object.assign(document.createElement('span'),{textContent:'億点'}));
-        $('scoreJp').textContent = '1億点を基準に表示（小数も正確に計算）';
+        $('score').replaceChildren(document.createTextNode(displayedScore), Object.assign(document.createElement('span'),{textContent:'点 / 100点'}));
+        $('scoreFill').style.width = (Number(hundredths)/100)+'%';
+        $('scoreTrack').setAttribute('aria-valuenow',displayedScore);
+        $('scoreJp').textContent = '500億点相当で50点。高得点ほど100点に近づきにくくなります。';
         $('earnedTitle').textContent = titleInfo.title;
         $('titleBreakdown').classList.toggle('hidden',titleInfo.special);
         $('reroll').disabled=titleInfo.special || titleInfo.variants<=1;
@@ -756,7 +778,7 @@
         }
         $('titleHint').textContent = titleInfo.special ? '金額で決まる特別称号です（10.1億円以上は通常称号より優先）。' :
           '金額 → 子供の人数 → 年齢。各条件の称号を「・」でつないでいます。';
-        $('equation').textContent = `（${currencyText(income)} ＋ ${currencyText(assets)}）× ${fmt.format(age)}歳 × ${fmt.format(1n+children)} ÷ 1億 = ${scoreInOkuText(score)} 億点`;
+        $('equation').textContent = `旧スコア：（${currencyText(income)} ＋ ${currencyText(assets)}）× ${fmt.format(age)} × ${fmt.format(1n+children)} = ${scoreInOkuText(score)}億点 → 新スコア：${displayedScore} / 100点`;
         $('share').disabled = false;
         $('copy').disabled = false;
       } catch (e) {
@@ -769,7 +791,7 @@
       if (!latest) return '';
       const r = latest;
       const link = /^https?:$/.test(location.protocol) ? `\n計算ページ：${location.href}` : '';
-      return `人生スコア：${scoreInOkuText(r.score)} 億点\n称号：${r.title}\n生涯年収：${currencyText(r.income)}\n資産：${currencyText(r.assets)}\n年齢：${r.age}歳\n子供の人数：${r.children}人\n（生涯年収＋資産）×年齢×（1＋子供の人数）${link}`;
+      return `人生スコア：${r.displayedScore} / 100点\n称号：${r.title}\n生涯年収：${currencyText(r.income)}\n資産：${currencyText(r.assets)}\n年齢：${r.age}歳\n子供の人数：${r.children}人\n旧スコア：${scoreInOkuText(r.score)}億点（500億点で新スコア50点）${link}`;
     }
     async function copyResult() {
       const text = resultText();
