@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#151a26">
-  <meta name="description" content="生涯年収・資産・年齢・子供の人数から、人生のスコアを計算する無料ツール。">
+  <meta name="description" content="生涯年収・資産・年齢・子供の人数で人生スコアと称号を計算する無料ツール。">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="人生スコア">
@@ -33,6 +33,13 @@
     .amount-wrap input::placeholder { color:#697386; font-weight:400; }
     .amount-wrap select { width:77px; flex-shrink:0; appearance:none; -webkit-appearance:none; border:0; outline:0; border-left:1px solid #343b4b; color:#e5e9fc; background:#252d3d; padding:8px 20px 8px 8px; font-size:.86rem; font-weight:700; text-align:center; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23c9d1e4' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 7px center; }
     .suffix { padding:0 13px; display:flex; align-items:center; color:#c6cee3; border-left:1px solid #343b4b; background:#222a3a; font-weight:700; font-size:.91rem; }
+    .sign-toggle { flex-shrink:0; align-self:stretch; min-width:34px; padding:0 6px; border:0; border-left:1px solid #343b4b; background:#20293b; color:#b7c6ea; font-weight:800; font-size:1.07rem; }
+    .sign-toggle:active { background:#364665; }
+    .title-panel { margin-top:19px; border-radius:12px; padding:16px; background:#141b2d; border-left:4px solid var(--coral); }
+    .title-label { color:#b5c1e1; font-size:.75rem; font-weight:800; letter-spacing:.08em; margin-bottom:6px; }
+    .earned-title { color:#fff5f3; font-size:clamp(1.05rem,4.8vw,1.33rem); font-weight:800; line-height:1.65; overflow-wrap:anywhere; white-space:normal; }
+    .title-hint { color:#9eacca; font-size:.75rem; margin:8px 0 0; }
+
     input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     input::-webkit-outer-spin-button,input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
     .hint { font-size:.77rem; color:var(--muted); margin:8px 0 0; }
@@ -82,6 +89,7 @@
           <label for="income">生涯年収</label>
           <div class="amount-wrap">
             <input id="income" type="text" inputmode="decimal" autocomplete="off" placeholder="例: 5.7" aria-label="生涯年収の金額">
+            <button class="sign-toggle" type="button" data-sign="income" aria-label="incomeの符号を切り替え" title="プラス／マイナス切替">±</button>
             <select id="incomeUnit" aria-label="生涯年収の単位"><option value="oku">億円</option><option value="man">万円</option><option value="yen">円</option></select>
           </div>
         </div>
@@ -89,6 +97,7 @@
           <label for="assets">資産</label>
           <div class="amount-wrap">
             <input id="assets" type="text" inputmode="decimal" autocomplete="off" placeholder="例: 3.1" aria-label="資産の金額">
+            <button class="sign-toggle" type="button" data-sign="assets" aria-label="assetsの符号を切り替え" title="プラス／マイナス切替">±</button>
             <select id="assetsUnit" aria-label="資産の単位"><option value="oku">億円</option><option value="man">万円</option><option value="yen">円</option></select>
           </div>
         </div>
@@ -96,6 +105,7 @@
           <label for="age">年齢（亡くなったとき）</label>
           <div class="amount-wrap">
             <input id="age" type="text" inputmode="numeric" autocomplete="off" placeholder="例: 81" aria-label="年齢">
+            <button class="sign-toggle" type="button" data-sign="age" aria-label="ageの符号を切り替え" title="プラス／マイナス切替">±</button>
             <span class="suffix">歳</span>
           </div>
         </div>
@@ -103,10 +113,12 @@
           <label for="children">子供の人数</label>
           <div class="amount-wrap">
             <input id="children" type="text" inputmode="numeric" autocomplete="off" placeholder="例: 1" aria-label="子供の人数">
+            <button class="sign-toggle" type="button" data-sign="children" aria-label="childrenの符号を切り替え" title="プラス／マイナス切替">±</button>
             <span class="suffix">人</span>
           </div>
         </div>
       </div>
+      <p class="hint">± ボタンでマイナスの数値にも切り替えられます。</p>
       <div id="validation" class="error hidden" role="status"></div>
       <div class="actions">
         <button class="btn btn-subtle" type="button" id="sample">画像の例を入力</button>
@@ -118,6 +130,11 @@
       <div class="result-title">YOUR LIFE SCORE</div>
       <div class="score" id="score">—<span>点</span></div>
       <div class="score-jp" id="scoreJp">4項目を入力すると結果が表示されます</div>
+      <div class="title-panel" aria-live="polite">
+        <div class="title-label">あなたの称号</div>
+        <div class="earned-title" id="earnedTitle">—</div>
+        <p class="title-hint" id="titleHint">金額・子供の人数・年齢の順に称号がつきます。</p>
+      </div>
       <div class="equation" id="equation">（生涯年収 ＋ 資産）× 年齢 ×（1 ＋ 子供の人数）</div>
       <div class="result-actions">
         <button class="btn btn-primary" type="button" id="share" disabled>結果を共有</button>
@@ -130,7 +147,9 @@
       <h2 id="formula-title">計算方法</h2>
       <div class="formula">（生涯年収 ＋ 資産）× 年齢 ×（1 ＋ 子供の人数）</div>
       <p>金額はすべて円に換算して計算します。例えば、年収5.7億円・資産3.1億円・81歳・子供1人なら、スコアは <strong style="color:#e9edff">142,560,000,000 点</strong>です。</p>
-      <p>これはゲーム用の独自スコアです。実際の人生の価値や幸福を評価するものではありません。入力した内容はサーバーへ送信されません。</p>
+      <p>称号は「生涯年収＋資産 → 子供の人数 → 年齢」の順に結合します。合計が10.1億円以上なら、特別称号「お前、別班か？」になります。</p>
+      <p>金額の称号区分は1,000万円（0.1億円）単位に四捨五入して判定します（特別称号の10.1億円以上は端数を丸めず判定）。年齢・子供の人数が負の場合は、その項目の称号を付けません。</p>
+      <p>これはジョークを含むゲーム用の独自スコア・称号です。実際の人生の価値や幸福を評価するものではありません。入力した内容はサーバーへ送信されません。</p>
     </section>
     <div class="bottom">スマートフォン・PC対応 ｜ 無料 ｜ 登録不要</div>
   </main>
@@ -141,50 +160,81 @@
     const fmt = new Intl.NumberFormat('ja-JP');
     let latest = null;
 
-    // 小数値をBigIntに変換して円単位で正確に計算する。
+    // 入力金額を1円単位の整数(BigInt)で保持し、負の数にも対応。
     function parseCurrency(value, unit) {
-      const s = value.trim().replace(/,/g, '').replace(/，/g, '').replace(/．/g, '.');
-      if (!/^\d+(?:\.\d+)?$/.test(s)) throw new Error('金額は0以上の数字で入力してください。');
+      const s = value.trim().replace(/,/g, '').replace(/，/g, '').replace(/．/g, '.').replace(/－/g, '-').replace(/−/g, '-');
+      const match = /^([+-]?)(\d+)(?:\.(\d+))?$/.exec(s);
+      if (!match || s.length > 120) throw new Error('金額は整数または小数で入力してください（マイナスも可）。');
       const scale = {oku:8, man:4, yen:0}[unit];
-      const [integer, decimal=''] = s.split('.');
+      const [, sign, integer, decimal=''] = match;
       const kept = decimal.slice(0, scale);
       const dropped = decimal.slice(scale);
       if (dropped && /[1-9]/.test(dropped)) throw new Error('金額は1円単位で入力してください。');
       if (scale === 0 && decimal && /[1-9]/.test(decimal)) throw new Error('「円」の場合は整数で入力してください。');
-      return BigInt(integer) * (10n ** BigInt(scale)) + BigInt((kept.padEnd(scale, '0') || '0'));
+      const magnitude = BigInt(integer) * (10n ** BigInt(scale)) + BigInt((kept.padEnd(scale, '0') || '0'));
+      return sign === '-' ? -magnitude : magnitude;
     }
-    function parseCount(raw, label, max) {
-      const s = raw.trim();
-      if (!/^\d+$/.test(s)) throw new Error(label+'は0以上の整数で入力してください。');
-      const n = Number(s);
-      if (!Number.isSafeInteger(n) || n > max) throw new Error(label+'は0〜'+max+'の範囲で入力してください。');
-      return BigInt(n);
+    function parseCount(raw, label) {
+      const s = raw.trim().replace(/－/g, '-').replace(/−/g, '-');
+      if (!/^[+-]?\d+$/.test(s) || s.length > 100) throw new Error(label+'は整数で入力してください（マイナスも可）。');
+      return BigInt(s);
     }
     function compactNumber(n) {
-      const oku = n / 100000000n;
-      const man = (n % 100000000n) / 10000n;
-      const yen = n % 10000n;
+      const sign = n < 0n ? '−' : '';
+      const abs = n < 0n ? -n : n;
+      const oku = abs / 100000000n;
+      const man = (abs % 100000000n) / 10000n;
+      const yen = abs % 10000n;
       let result = '';
       if (oku) result += fmt.format(oku) + '億';
       if (man) result += fmt.format(man) + '万';
       if (yen || !result) result += fmt.format(yen);
-      return result + ' 点';
+      return sign + result + ' 点';
     }
     function currencyText(n) {
       if (n === 0n) return '0円';
-      const oku = n / 100000000n;
-      const man = (n % 100000000n) / 10000n;
-      const yen = n % 10000n;
-      let s = '';
-      if (oku) s += fmt.format(oku) + '億';
-      if (man) s += fmt.format(man) + '万';
-      if (yen) s += fmt.format(yen);
-      return s + '円';
+      const sign = n < 0n ? '−' : '';
+      const abs = n < 0n ? -n : n;
+      const oku = abs / 100000000n;
+      const man = (abs % 100000000n) / 10000n;
+      const yen = abs % 10000n;
+      let result = '';
+      if (oku) result += fmt.format(oku) + '億';
+      if (man) result += fmt.format(man) + '万';
+      if (yen) result += fmt.format(yen);
+      return sign + result + '円';
+    }
+    // 特例は正確な合計額で判定。通常称号は0.1億円(1,000万円)単位に四捨五入。
+    function getTitle(total, children, age) {
+      if (total >= 1010000000n) return {title:'お前、別班か？', special:true};
+      const step = 10000000n;
+      const roundedTenths = total >= 0n ? (total+step/2n)/step : (total-step/2n)/step;
+      let wealth;
+      if (roundedTenths <= 10n) wealth = 'ホームレス';
+      else if (roundedTenths <= 20n) wealth = '普通の';
+      else if (roundedTenths <= 50n) wealth = '成金の';
+      else if (roundedTenths <= 80n) wealth = '別班の';
+      else wealth = 'ペニパンの';
+      let family = '';
+      if (children === 0n) family = '圧倒的な引っ込み思案の壁に阻まれ、射精管理センター勤務を余儀なくされた';
+      else if (children === 1n) family = '子供1人に生涯を注いだ';
+      else if (children === 2n) family = '日本の人口減少を防いだ';
+      else if (children === 3n) family = '大家族の';
+      else if (children >= 4n) family = '孕ませまくった';
+      let lifespan = '';
+      if (age >= 90n) lifespan = '老害';
+      else if (age >= 65n) lifespan = '老人';
+      else if (age >= 50n) lifespan = 'ギリギリ年金受け取れなかった人';
+      else if (age >= 0n) lifespan = '死ぬには早すぎた命だった人';
+      return {title:wealth+family+lifespan, special:false,
+        omitted: children < 0n || age < 0n};
     }
     function showResetState(message='4項目を入力すると結果が表示されます') {
       latest = null;
       $('score').innerHTML = '—<span>点</span>';
       $('scoreJp').textContent = message;
+      $('earnedTitle').textContent = '—';
+      $('titleHint').textContent = '金額・子供の人数・年齢の順に称号がつきます。';
       $('equation').textContent = '（生涯年収 ＋ 資産）× 年齢 ×（1 ＋ 子供の人数）';
       $('share').disabled = true;
       $('copy').disabled = true;
@@ -200,13 +250,18 @@
       try {
         const income = parseCurrency($('income').value, $('incomeUnit').value);
         const assets = parseCurrency($('assets').value, $('assetsUnit').value);
-        const age = parseCount($('age').value, '年齢', 130);
-        const children = parseCount($('children').value, '子供の人数', 100);
+        const age = parseCount($('age').value, '年齢');
+        const children = parseCount($('children').value, '子供の人数');
         const score = (income+assets)*age*(1n+children);
-        latest = { income,assets,age,children,score };
+        const titleInfo = getTitle(income+assets,children,age);
+        latest = { income,assets,age,children,score,title:titleInfo.title };
         $('validation').classList.add('hidden');
         $('score').replaceChildren(document.createTextNode(fmt.format(score)), Object.assign(document.createElement('span'),{textContent:'点'}));
         $('scoreJp').textContent = compactNumber(score);
+        $('earnedTitle').textContent = titleInfo.title;
+        $('titleHint').textContent = titleInfo.special ? '生涯年収＋資産が10.1億円以上の特別称号' :
+          titleInfo.omitted ? '負の年齢・子供の人数は称号区分がないため、その項目を省略しています。' :
+          '金額 → 子供の人数 → 年齢 の順に組み合わせています。';
         $('equation').textContent = `（${currencyText(income)} ＋ ${currencyText(assets)}）× ${fmt.format(age)}歳 × ${fmt.format(1n+children)} = ${fmt.format(score)} 点`;
         $('share').disabled = false;
         $('copy').disabled = false;
@@ -220,7 +275,7 @@
       if (!latest) return '';
       const r = latest;
       const link = /^https?:$/.test(location.protocol) ? `\n計算ページ：${location.href}` : '';
-      return `人生スコア：${fmt.format(r.score)} 点\n生涯年収：${currencyText(r.income)}\n資産：${currencyText(r.assets)}\n年齢：${r.age}歳\n子供の人数：${r.children}人\n（生涯年収＋資産）×年齢×（1＋子供の人数）${link}`;
+      return `人生スコア：${fmt.format(r.score)} 点\n称号：${r.title}\n生涯年収：${currencyText(r.income)}\n資産：${currencyText(r.assets)}\n年齢：${r.age}歳\n子供の人数：${r.children}人\n（生涯年収＋資産）×年齢×（1＋子供の人数）${link}`;
     }
     async function copyResult() {
       const text = resultText();
@@ -249,6 +304,13 @@
       $('incomeUnit').value='oku'; $('assetsUnit').value='oku'; calculate();
       $('income').focus();
     });
+    document.querySelectorAll('[data-sign]').forEach(button => button.addEventListener('click', () => {
+      const input = $(button.dataset.sign);
+      const old = input.value.trim();
+      input.value = old.startsWith('-') ? old.slice(1) : '-' + old;
+      input.focus();
+      calculate();
+    }));
     fields.forEach(id => $(id).addEventListener('input',calculate));
     $('copy').addEventListener('click',copyResult);
     $('share').addEventListener('click',async()=>{
