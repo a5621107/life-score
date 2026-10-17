@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="人生スコア">
-  <title>人生スコア計算機</title>
+  <title>人生スコア計算機｜毒舌称号 Ver.3</title>
   <style>
     :root { color-scheme: dark; --bg:#10141e; --panel:#1b2130; --panel2:#151b28; --line:#343b4b; --muted:#a7b0c2; --text:#f3f5ff; --accent:#99b1ff; --coral:#ff796e; }
     * { box-sizing:border-box; }
@@ -39,6 +39,19 @@
     .title-label { color:#b5c1e1; font-size:.75rem; font-weight:800; letter-spacing:.08em; margin-bottom:6px; }
     .earned-title { color:#fff5f3; font-size:clamp(1.05rem,4.8vw,1.33rem); font-weight:800; line-height:1.65; overflow-wrap:anywhere; white-space:normal; }
     .title-hint { color:#9eacca; font-size:.75rem; margin:8px 0 0; }
+    .title-breakdown { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:13px; }
+    .title-detail { background:#19243a; border:1px solid #3d4c6e; border-radius:9px; padding:9px; min-width:0; }
+    .title-detail-label { display:block; color:#a8b8da; font-size:.69rem; font-weight:800; margin-bottom:5px; }
+    .title-detail-text { display:block; color:#f4f6ff; font-size:.76rem; overflow-wrap:anywhere; font-weight:750; line-height:1.5; }
+    .rule-box { border:1px solid var(--line); border-radius:13px; padding:14px 15px; margin-top:19px; background:#171e2b; }
+    .rule-box summary { cursor:pointer; color:#e6ebff; font-weight:800; font-size:.91rem; }
+    .rule-box p { margin:10px 0; }
+    .rule-heading { color:#b5c7f0; font-weight:800; padding:8px 0 4px; }
+    .rule-table { width:100%; border-collapse:collapse; font-size:.77rem; }
+    .rule-table td { padding:8px 5px; border-bottom:1px solid #354154; vertical-align:top; }
+    .rule-table td:first-child { width:31%; white-space:nowrap; color:#bfcdf0; }
+    .rule-table td:last-child { color:#f3f5fc; overflow-wrap:anywhere; }
+    .rule-summary { color:#bbc6de; font-size:.78rem; }
 
     input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     input::-webkit-outer-spin-button,input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
@@ -70,6 +83,7 @@
     .hidden { display:none; }
     button:focus-visible,select:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
     @media(max-width:390px) { .wrap { width:calc(100% - 22px); padding-top:24px; } .card,.result { padding:17px; } .grid { gap:14px 10px; } .amount-wrap select { width:68px; padding-left:4px; padding-right:18px; font-size:.79rem; } .amount-wrap input { padding:12px 8px; font-size:1.06rem; } .suffix { padding:0 9px; } .result-actions { flex-direction:column; } }
+    @media(max-width:390px) { .title-breakdown {grid-template-columns:1fr;} .title-detail{padding:10px;} .title-detail-label { margin-bottom:2px; } }
     @media(max-width:320px) { .grid { grid-template-columns:1fr; } }
     @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition:none!important; } }
   </style>
@@ -79,7 +93,7 @@
     <header>
       <span class="eyebrow">LIFE SCORE</span>
       <h1>人生スコア計算機</h1>
-      <p class="subtitle">数字を入力するだけ。人生の結果を、ひとつのスコアに。</p>
+      <p class="subtitle">金額25段階 × 子供11段階 × 年齢20段階。最大5,500通りの毒舌称号 Ver.3</p>
     </header>
 
     <section class="card" aria-labelledby="input-title">
@@ -133,7 +147,12 @@
       <div class="title-panel" aria-live="polite">
         <div class="title-label">あなたの称号</div>
         <div class="earned-title" id="earnedTitle">—</div>
-        <p class="title-hint" id="titleHint">金額・子供の人数・年齢の順に称号がつきます。</p>
+        <p class="title-hint" id="titleHint">金額 → 子供の人数 → 年齢の順で、毒舌称号を作ります。</p>
+        <div class="title-breakdown hidden" id="titleBreakdown" aria-label="称号の内訳">
+          <div class="title-detail"><span class="title-detail-label">① 生涯年収＋資産</span><span class="title-detail-text" id="partWealth"></span></div>
+          <div class="title-detail"><span class="title-detail-label">② 子供の人数</span><span class="title-detail-text" id="partFamily"></span></div>
+          <div class="title-detail"><span class="title-detail-label">③ 年齢</span><span class="title-detail-text" id="partAge"></span></div>
+        </div>
       </div>
       <div class="equation" id="equation">（生涯年収 ＋ 資産）× 年齢 ×（1 ＋ 子供の人数）</div>
       <div class="result-actions">
@@ -148,8 +167,13 @@
       <div class="formula">（生涯年収 ＋ 資産）× 年齢 ×（1 ＋ 子供の人数）</div>
       <p>金額はすべて円に換算して計算します。例えば、年収5.7億円・資産3.1億円・81歳・子供1人なら、スコアは <strong style="color:#e9edff">142,560,000,000 点</strong>です。</p>
       <p>称号は「生涯年収＋資産 → 子供の人数 → 年齢」の順に結合します。合計が10.1億円以上なら、特別称号「お前、別班か？」になります。</p>
-      <p>金額の称号区分は1,000万円（0.1億円）単位に四捨五入して判定します（特別称号の10.1億円以上は端数を丸めず判定）。年齢・子供の人数が負の場合は、その項目の称号を付けません。</p>
-      <p>これはジョークを含むゲーム用の独自スコア・称号です。実際の人生の価値や幸福を評価するものではありません。入力した内容はサーバーへ送信されません。</p>
+      <p>金額の通常称号は1,000万円単位に四捨五入して細分化します。特別称号だけは端数を丸めず、正確な金額が10.1億円以上かどうかで判定します。負の数にも専用称号があります。</p>
+      <details class="rule-box">
+        <summary>称号の判定表をすべて見る（毒舌版）</summary>
+        <p class="rule-summary">金額は1,000万円単位に四捨五入した判定値を使用。年齢と人数は入力した整数のまま判定します。</p>
+        <div id="ruleList"></div>
+      </details>
+      <p>※ ゲーム用のブラックジョークです。人の価値や幸福を示す指標ではありません。入力内容はサーバーに送信されません。</p>
     </section>
     <div class="bottom">スマートフォン・PC対応 ｜ 無料 ｜ 登録不要</div>
   </main>
@@ -204,37 +228,132 @@
       if (yen) result += fmt.format(yen);
       return sign + result + '円';
     }
-    // 特例は正確な合計額で判定。通常称号は0.1億円(1,000万円)単位に四捨五入。
-    function getTitle(total, children, age) {
-      if (total >= 1010000000n) return {title:'お前、別班か？', special:true};
+    // 金額の通常判定のみ1,000万円単位に丸める。特例は正確な円額で判定する。
+    // upperBound は0.1億円（1,000万円）単位。コード・画面表示・ルール表で同じ配列を使う。
+    const moneyRules = [
+      [-100n, '借金で国家予算と競争している破滅王'],
+      [-50n, '借金取りからの着信が目覚まし時計の破産予備軍'],
+      [-10n, '財産より督促状を多く相続した借金貴族'],
+      [-1n, '貯金という単語を知らない赤字製造機'],
+      [0n, '財布も人生も残高ゼロの無一文'],
+      [1n, '小銭に人生を握られたホームレス級'],
+      [3n, 'コンビニで値札に敗北するホームレス候補'],
+      [5n, '値引きシールに人生を捧げたホームレス予備軍'],
+      [7n, '老後より次の給料日を心配するホームレス級'],
+      [10n, '持ち家より段ボールが似合うホームレス候補'],
+      [13n, '平均点を取って勝者気取りの普通の人'],
+      [16n, '貧乏脱出を人生最大の実績にした普通の人'],
+      [20n, '「俺は堅実」が唯一の自慢な普通の人'],
+      [25n, '通帳の桁数だけでイキり始めた成金'],
+      [35n, 'お金で品性を買おうとして失敗した成金'],
+      [45n, '札束で常識を殴ることしか知らない成金'],
+      [50n, '自己紹介が資産額から始まる末期の成金'],
+      [55n, '別班に採用されたと思い込む一般人'],
+      [65n, '別班の経費で人生を立て直した工作員'],
+      [75n, '秘密任務より節税対策に夢中な別班員'],
+      [80n, '国より財布の機密を優先する別班幹部'],
+      [85n, 'ペニパンの威光で一般人を見下す成金'],
+      [95n, 'ペニパンを名乗る資格だけ立派な権力中毒者'],
+      [100n, '札束で人格の欠陥を隠すペニパン幹部'],
+      [null, '国家機密に片足突っ込んだペニパン総帥']
+    ];
+    // 子供の数は整数・負数・非常に大きい数にも対応。
+    const familyRules = [
+      [-1n, '子供の人数すら帳尻が合わない異世界世帯'],
+      [0n, '恋愛のチュートリアルで詰み射精管理センターに終身配属された'],
+      [1n, '育児に全リソースを吸い取られた'],
+      [2n, '少子化対策を政府より真面目に担当した'],
+      [3n, '家庭内での発言権を完全に失った'],
+      [4n, '家族計画をシュレッダーにかけた'],
+      [5n, '保育園の名簿を私物化した'],
+      [6n, '少子化担当大臣を無職に追い込んだ'],
+      [7n, '自宅が保育園と区別できなくなった'],
+      [9n, '人口ピラミッドを一人で修理した'],
+      [null, '戸籍謄本が巻物になった大家族の支配者']
+    ];
+    // 年齢は満年齢を基準。負数もゲーム入力として扱う。
+    const ageRules = [
+      [-1n, '生まれる前から人生をやり直した時間バグの人'],
+      [0n, '人生のスタート画面で強制終了した人'],
+      [5n, 'チュートリアルを突破できなかった人'],
+      [12n, 'セーブデータすら残せなかった人'],
+      [17n, '青春の予告編だけ上映された人'],
+      [24n, '社会の理不尽を体験版で味わった人'],
+      [34n, 'ブラック企業に人生の前半を献上した人'],
+      [44n, '住宅ローンのために生まれたような人'],
+      [49n, '定年より先に人生がリストラされた人'],
+      [54n, '年金の気配すら掴めなかった人'],
+      [59n, '年金の入口で門前払いされた人'],
+      [64n, '年金ゴール直前で回線を切られた人'],
+      [69n, '年金の元を取る前に退場した老人'],
+      [74n, '昔話と説教で若者の時間を奪った老人'],
+      [79n, '武勇伝の再放送が終わらない老人'],
+      [84n, '周囲の相づちを敬意と勘違いした老人'],
+      [89n, '説教だけが現役だった古参の老人'],
+      [94n, '老害界で殿堂入りを果たした人'],
+      [99n, '死神にすら面倒くさがられた老害'],
+      [null, '死神の退職届を書かせた伝説の老害']
+    ];
+    function ruleFor(n, rules) {
+      for (const [limit, phrase] of rules) if (limit === null || n <= limit) return phrase;
+      return rules[rules.length-1][1];
+    }
+    function roundToTenths(total) {
       const step = 10000000n;
-      const roundedTenths = total >= 0n ? (total+step/2n)/step : (total-step/2n)/step;
-      let wealth;
-      if (roundedTenths <= 10n) wealth = 'ホームレス';
-      else if (roundedTenths <= 20n) wealth = '普通の';
-      else if (roundedTenths <= 50n) wealth = '成金の';
-      else if (roundedTenths <= 80n) wealth = '別班の';
-      else wealth = 'ペニパンの';
-      let family = '';
-      if (children === 0n) family = '圧倒的な引っ込み思案の壁に阻まれ、射精管理センター勤務を余儀なくされた';
-      else if (children === 1n) family = '子供1人に生涯を注いだ';
-      else if (children === 2n) family = '日本の人口減少を防いだ';
-      else if (children === 3n) family = '大家族の';
-      else if (children >= 4n) family = '孕ませまくった';
-      let lifespan = '';
-      if (age >= 90n) lifespan = '老害';
-      else if (age >= 65n) lifespan = '老人';
-      else if (age >= 50n) lifespan = 'ギリギリ年金受け取れなかった人';
-      else if (age >= 0n) lifespan = '死ぬには早すぎた命だった人';
-      return {title:wealth+family+lifespan, special:false,
-        omitted: children < 0n || age < 0n};
+      return total >= 0n ? (total+step/2n)/step : (total-step/2n)/step;
+    }
+    function getTitle(total, children, age) {
+      if (total >= 1010000000n) return {title:'お前、別班か？', special:true, parts:null};
+      const parts = [
+        ruleFor(roundToTenths(total), moneyRules),
+        ruleFor(children, familyRules),
+        ruleFor(age, ageRules)
+      ];
+      return {title:parts.join('・'), special:false, parts};
+    }
+    function ruleBoundLabel(limit, previous, unit) {
+      if (limit === null) return unit === '億円' ? '10.1億円（判定用）／実額10.1億円未満' : `${previous + 1n}以上`;
+      if (previous === -99999999999999999999999n) {
+        if (unit === '億円') return `−10.0億円以下（判定用）`;
+        return `${limit}以下`;
+      }
+      if (unit === '億円') {
+        const fmtTenth = n => {
+          const negative = n < 0n; const abs = negative ? -n : n;
+          return (negative ? '−' : '') + (abs/10n).toString() + '.' + (abs%10n).toString();
+        };
+        return `${fmtTenth(previous + 1n)}〜${fmtTenth(limit)}億円（判定用）`;
+      }
+      return `${previous + 1n}〜${limit}`;
+    }
+    function buildRuleTable(title, rules, unit, initial) {
+      const heading = document.createElement('div'); heading.className = 'rule-heading'; heading.textContent = title;
+      const table = document.createElement('table'); table.className='rule-table';
+      const tbody = document.createElement('tbody');
+      let prev = initial;
+      for (const [limit, phrase] of rules) {
+        const tr = document.createElement('tr');
+        for (const t of [ruleBoundLabel(limit,prev,unit),phrase]) {
+          const td = document.createElement('td'); td.textContent=t; tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+        if (limit !== null) prev = limit;
+      }
+      table.appendChild(tbody);
+      $('ruleList').append(heading,table);
+    }
+    function renderRuleTables() {
+      buildRuleTable('① 生涯年収＋資産（特例：10.1億円以上は「お前、別班か？」のみ）',moneyRules,'億円',-99999999999999999999999n);
+      buildRuleTable('② 子供の人数',familyRules,'人',-99999999999999999999999n);
+      buildRuleTable('③ 年齢',ageRules,'歳',-99999999999999999999999n);
     }
     function showResetState(message='4項目を入力すると結果が表示されます') {
       latest = null;
       $('score').innerHTML = '—<span>点</span>';
       $('scoreJp').textContent = message;
       $('earnedTitle').textContent = '—';
-      $('titleHint').textContent = '金額・子供の人数・年齢の順に称号がつきます。';
+      $('titleBreakdown').classList.add('hidden');
+      $('titleHint').textContent = '金額 → 子供の人数 → 年齢の順で、毒舌称号を作ります。';
       $('equation').textContent = '（生涯年収 ＋ 資産）× 年齢 ×（1 ＋ 子供の人数）';
       $('share').disabled = true;
       $('copy').disabled = true;
@@ -259,9 +378,12 @@
         $('score').replaceChildren(document.createTextNode(fmt.format(score)), Object.assign(document.createElement('span'),{textContent:'点'}));
         $('scoreJp').textContent = compactNumber(score);
         $('earnedTitle').textContent = titleInfo.title;
-        $('titleHint').textContent = titleInfo.special ? '生涯年収＋資産が10.1億円以上の特別称号' :
-          titleInfo.omitted ? '負の年齢・子供の人数は称号区分がないため、その項目を省略しています。' :
-          '金額 → 子供の人数 → 年齢 の順に組み合わせています。';
+        $('titleBreakdown').classList.toggle('hidden',titleInfo.special);
+        if (!titleInfo.special) {
+          ['partWealth','partFamily','partAge'].forEach((id,i) => $(id).textContent = titleInfo.parts[i]);
+        }
+        $('titleHint').textContent = titleInfo.special ? '資産合計が10.1億円以上なら、ほかの称号はすべて上書きされます。' :
+          '金額 → 子供の人数 → 年齢。各条件の称号を「・」でつないでいます。';
         $('equation').textContent = `（${currencyText(income)} ＋ ${currencyText(assets)}）× ${fmt.format(age)}歳 × ${fmt.format(1n+children)} = ${fmt.format(score)} 点`;
         $('share').disabled = false;
         $('copy').disabled = false;
@@ -323,6 +445,7 @@
       }
       await copyResult();
     });
+    renderRuleTables();
     calculate();
   </script>
 </body>
